@@ -1,0 +1,23 @@
+{
+  "name": "Sarita Pharmacy — Medicine Delivery Prayagraj",
+  "short_name": "Sarita Pharmacy",
+  "description": "Genuine medicines, fast home delivery, best prices. Prayagraj ki sabse trusted pharmacy.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a3d52",
+  "theme_color": "#0d4f6b",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
