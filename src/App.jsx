@@ -221,8 +221,8 @@ const verifyAdmin = async (input) => {
 //   ─────────────────────────────────────
 //   Then click "Publish". Restricts delete and limits access window.
 //
-const PROJECT_ID = "sarita-pharmacy";
-const API_KEY = "AIzaSyCNMyoUsRUWPAUlx_klx9kuD4GjoUGC2fk";
+const PROJECT_ID = "sarita-pharmacy-25d00";
+const API_KEY = "AIzaSyCh4nDjecmJVkxTmnxUkoLZgP9ML63i55w";
 const BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 
 const toFS = obj => {
@@ -1369,286 +1369,212 @@ function StatsSection() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// PROMO CAROUSEL — Update this array weekly for new promotions
+// AD CAROUSEL — Premium cover-flow for weekly product ads
 // ═══════════════════════════════════════════════════════════
-const PROMO_SLIDES = [
-  {
-    id: 1,
-    badge: "Limited Time Offer",
-    title: "Flat 15% OFF",
-    subtitle: "On All Medicines!",
-    desc: "Online order kijiye aur paiye exclusive discount sabhi medicines par.",
-    cta: "Order Now",
-    gradient: "linear-gradient(135deg, #092c3c 0%, #0d4f6b 50%, #06b6d4 100%)",
-    accent: "#22d3ee",
-    badgeColor: "#f59e0b",
-  },
-  {
-    id: 2,
-    badge: "Immunity Booster",
-    title: "Vitamins & Supplements",
-    subtitle: "Daily Health Essentials",
-    desc: "Multivitamins, Calcium, Iron, Vitamin D3 — sab kuch ek jagah available.",
-    cta: "Shop Now",
-    gradient: "linear-gradient(135deg, #1a2e05 0%, #365314 50%, #65a30d 100%)",
-    accent: "#a3e635",
-    badgeColor: "#84cc16",
-  },
-  {
-    id: 3,
-    badge: "Monsoon Special",
-    title: "Immunity Kit",
-    subtitle: "Baarish Mein Suraksha",
-    desc: "Fever, cold, cough ki tayaari — Paracetamol, Cetirizine, ORS sab ready.",
-    cta: "Get Kit",
-    gradient: "linear-gradient(135deg, #1e1b4b 0%, #3730a3 50%, #6366f1 100%)",
-    accent: "#a5b4fc",
-    badgeColor: "#818cf8",
-  },
-  {
-    id: 4,
-    badge: "Free Delivery",
-    title: "₹500+ Orders",
-    subtitle: "Delivery Bilkul Free!",
-    desc: "Prayagraj mein 45-60 min delivery. Ghar baithe dawai mangwao.",
-    cta: "Order Karo",
-    gradient: "linear-gradient(135deg, #134e4a 0%, #0f766e 50%, #14b8a6 100%)",
-    accent: "#5eead4",
-    badgeColor: "#2dd4bf",
-  },
-  {
-    id: 5,
-    badge: "Baby & Mom Care",
-    title: "Baby Products",
-    subtitle: "Trusted Brands Only",
-    desc: "Cerelac, Diapers, Baby Lotion, Gripe Water — sab genuine guaranteed.",
-    cta: "Explore",
-    gradient: "linear-gradient(135deg, #4a1d6e 0%, #7e22ce 50%, #c084fc 100%)",
-    accent: "#e9d5ff",
-    badgeColor: "#a855f7",
-  },
-  {
-    id: 6,
-    badge: "Skin & Hair",
-    title: "Derma Products",
-    subtitle: "Glow Naturally",
-    desc: "Sunscreen, moisturizer, anti-acne, hair oil — top dermatology brands.",
-    cta: "Shop Now",
-    gradient: "linear-gradient(135deg, #7f1d1d 0%, #dc2626 50%, #f87171 100%)",
-    accent: "#fecaca",
-    badgeColor: "#fb923c",
-  },
+// HOW TO UPDATE: Replace files 01.jpg–06.jpg in /public/assets/ads/
+// Images: portrait 4:5 ratio, ~1080×1350px recommended (JPG/PNG).
+// No code edits needed — just swap the image files each week.
+// ═══════════════════════════════════════════════════════════
+
+// ── 1. Image data config ──
+const AD_SLIDES = [
+  { id: 1, src: "/assets/ads/01.jpg", alt: "Pharmacy Offer 1" },
+  { id: 2, src: "/assets/ads/02.jpg", alt: "Pharmacy Offer 2" },
+  { id: 3, src: "/assets/ads/03.jpg", alt: "Pharmacy Offer 3" },
+  { id: 4, src: "/assets/ads/04.jpg", alt: "Pharmacy Offer 4" },
+  { id: 5, src: "/assets/ads/05.jpg", alt: "Pharmacy Offer 5" },
+  { id: 6, src: "/assets/ads/06.jpg", alt: "Pharmacy Offer 6" },
 ];
 
 function OffersSection() {
   const [current, setCurrent] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [imgErrors, setImgErrors] = useState({});
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
   const intervalRef = useRef(null);
-  const total = PROMO_SLIDES.length;
+  const [hovered, setHovered] = useState(false);
+  const total = AD_SLIDES.length;
 
-  const goTo = useCallback((idx) => {
-    setCurrent(((idx % total) + total) % total);
-  }, [total]);
-
-  const next = useCallback(() => goTo(current + 1), [current, goTo]);
-  const prev = useCallback(() => goTo(current - 1), [current, goTo]);
-
-  // Auto-slide
-  useEffect(() => {
-    intervalRef.current = setInterval(() => {
-      setCurrent(c => (c + 1) % total);
-    }, 3000);
-    return () => clearInterval(intervalRef.current);
-  }, [total]);
-
-  // Pause on hover
-  const pause = () => clearInterval(intervalRef.current);
-  const resume = () => {
+  // ── 2. Autoplay + infinite loop (modulo-based, seamless) ──
+  const startAutoplay = useCallback(() => {
     clearInterval(intervalRef.current);
+    if (total < 2) return;
     intervalRef.current = setInterval(() => {
       setCurrent(c => (c + 1) % total);
-    }, 3000);
-  };
+    }, 2500);
+  }, [total]);
 
-  // Mobile swipe
-  const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; pause(); };
+  useEffect(() => {
+    if (!hovered) startAutoplay();
+    return () => clearInterval(intervalRef.current);
+  }, [startAutoplay, hovered]);
+
+  // ── 3. Navigation ──
+  const next = useCallback(() => setCurrent(c => (c + 1) % total), [total]);
+  const prev = useCallback(() => setCurrent(c => (c - 1 + total) % total), [total]);
+
+  // ── 4. Hover-to-pause (desktop only, whole section) ──
+  const onEnter = () => { setHovered(true); clearInterval(intervalRef.current); };
+  const onLeave = () => { setHovered(false); };
+
+  // ── 5. Mobile swipe handling ──
+  const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; clearInterval(intervalRef.current); };
   const onTouchMove = (e) => { touchEndX.current = e.touches[0].clientX; };
   const onTouchEnd = () => {
     const diff = touchStartX.current - touchEndX.current;
     if (Math.abs(diff) > 40) { diff > 0 ? next() : prev(); }
-    resume();
+    startAutoplay();
   };
 
-  const getPrev = (current - 1 + total) % total;
-  const getNext = (current + 1) % total;
+  // ── 6. Responsive card sizing + cover-flow positioning ──
+  const wrap = (idx) => ((idx % total) + total) % total;
+  const offsets = [-2, -1, 0, 1, 2];
 
-  const getCardStyle = (position) => {
-    const base = {
-      position: "absolute",
-      top: "50%",
-      width: "clamp(260px, 52vw, 460px)",
-      aspectRatio: "16 / 9",
-      borderRadius: "clamp(16px, 2.5vw, 24px)",
-      overflow: "hidden",
-      transition: "all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)",
-      cursor: "pointer",
-      willChange: "transform, opacity, left",
+  const getCardTransform = (offset) => {
+    const dist = Math.abs(offset);
+    // Container-relative left positions for overlapping cover-flow
+    // Card width ~23% of container, so these positions create natural overlap
+    const leftPositions = { "-2": 8, "-1": 27, "0": 50, "1": 73, "2": 92 };
+    const leftPct = leftPositions[String(offset)] || 50;
+    const scaleMap = { 0: 1.18, 1: 0.85, 2: 0.7 };
+    const scale = scaleMap[dist] || 0.5;
+    const opacityMap = { 0: 1, 1: 0.7, 2: 0.45 };
+    const opacity = opacityMap[dist] || 0;
+    const blurMap = { 0: 0, 1: 0, 2: 0 };
+    const blur = blurMap[dist] || 0;
+    const zMap = { 0: 5, 1: 3, 2: 1 };
+    const z = zMap[dist] || 0;
+    const shadowMap = {
+      0: "0 25px 60px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.06)",
+      1: "0 12px 30px rgba(0,0,0,0.15)",
+      2: "0 6px 16px rgba(0,0,0,0.08)",
     };
-    if (position === "center") {
-      return { ...base, zIndex: 3, transform: "translate(-50%, -50%) scale(1)", left: "50%", opacity: 1, filter: "none", boxShadow: "0 24px 60px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,255,255,0.06)" };
-    } else if (position === "left") {
-      return { ...base, zIndex: 2, transform: "translate(-50%, -50%) scale(0.82)", left: "12%", opacity: 0.5, filter: "blur(1.5px)", boxShadow: "0 8px 24px rgba(0,0,0,0.1)" };
-    } else if (position === "right") {
-      return { ...base, zIndex: 2, transform: "translate(-50%, -50%) scale(0.82)", left: "88%", opacity: 0.5, filter: "blur(1.5px)", boxShadow: "0 8px 24px rgba(0,0,0,0.1)" };
-    }
-    return { ...base, zIndex: 0, transform: "translate(-50%, -50%) scale(0.6)", left: "50%", opacity: 0, pointerEvents: "none" };
+    const shadow = shadowMap[dist] || "none";
+    return { leftPct, scale, opacity, blur, z, shadow };
   };
 
-  const renderCard = (slideIdx, position) => {
-    const slide = PROMO_SLIDES[slideIdx];
+  const renderCard = (offset) => {
+    const idx = wrap(current + offset);
+    const slide = AD_SLIDES[idx];
+    const hasError = imgErrors[idx];
+    const { leftPct, scale, opacity, blur, z, shadow } = getCardTransform(offset);
+
     return (
-      <div key={slide.id + "-" + position} style={{ ...getCardStyle(position), background: slide.gradient }}
-        onClick={() => { if (position === "left") prev(); if (position === "right") next(); }}>
-        {/* Decorative orbs */}
-        <div style={{ position: "absolute", top: "-20%", right: "-10%", width: "50%", aspectRatio: "1", borderRadius: "50%", background: "rgba(255,255,255,0.06)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", bottom: "-15%", left: "-8%", width: "35%", aspectRatio: "1", borderRadius: "50%", background: "rgba(255,255,255,0.04)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", top: "30%", right: "5%", width: "15%", aspectRatio: "1", borderRadius: "50%", background: "rgba(255,255,255,0.03)", pointerEvents: "none" }} />
-
-        {/* Content overlay */}
-        <div style={{ position: "relative", zIndex: 1, height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", padding: "clamp(14px, 3vw, 32px) clamp(18px, 4vw, 40px)" }}>
-          {/* Badge */}
+      <div
+        key={`card-${slide.id}-${offset}`}
+        style={{
+          position: "absolute",
+          left: `${leftPct}%`,
+          top: "50%",
+          width: "clamp(200px, 40vw, 280px)",
+          aspectRatio: "4 / 5",
+          transform: `translate(-50%, -50%) scale(${scale})`,
+          opacity,
+          filter: "none",
+          zIndex: z,
+          borderRadius: "clamp(14px, 2vw, 20px)",
+          overflow: "hidden",
+          boxShadow: shadow,
+          transition: "all 0.65s cubic-bezier(0.22, 1, 0.36, 1)",
+          willChange: "transform, opacity, filter",
+          userSelect: "none",
+          WebkitUserSelect: "none",
+          pointerEvents: offset === 0 ? "auto" : "none",
+          cursor: "default",
+        }}
+      >
+        {hasError ? (
           <div style={{
-            display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start",
-            background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)",
-            border: "1px solid rgba(255,255,255,0.18)", borderRadius: 20,
-            padding: "3px 12px", marginBottom: "clamp(6px, 1.2vw, 12px)",
+            width: "100%", height: "100%",
+            background: "linear-gradient(135deg, #f1f5f9, #e2e8f0)",
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            color: "#94a3b8",
           }}>
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: slide.badgeColor, display: "inline-block", animation: "blink 1s infinite" }} />
-            <span style={{ color: "white", fontSize: "clamp(8px, 1.1vw, 10px)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>{slide.badge}</span>
+            <Icon name="image" size={32} color="#cbd5e1" />
+            <span style={{ fontSize: 11, fontWeight: 600, marginTop: 8 }}>Ad Coming Soon</span>
           </div>
-
-          {/* Title */}
-          <div style={{
-            fontFamily: "'Outfit', sans-serif", fontSize: "clamp(20px, 4vw, 38px)",
-            fontWeight: 900, color: "white", lineHeight: 1.05, letterSpacing: "-0.02em",
-            marginBottom: "clamp(1px, 0.4vw, 4px)",
-          }}>{slide.title}</div>
-
-          {/* Subtitle */}
-          <div style={{
-            color: slide.accent, fontSize: "clamp(11px, 1.8vw, 16px)",
-            fontWeight: 800, fontFamily: "'Outfit', sans-serif",
-            marginBottom: "clamp(4px, 0.8vw, 10px)",
-          }}>{slide.subtitle}</div>
-
-          {/* Description */}
-          <p style={{
-            color: "rgba(255,255,255,0.72)", fontSize: "clamp(9px, 1.3vw, 12.5px)",
-            lineHeight: 1.5, maxWidth: "88%", margin: 0,
-            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
-          }}>{slide.desc}</p>
-
-          {/* CTA pill */}
-          <div style={{
-            display: "inline-flex", alignSelf: "flex-start", marginTop: "clamp(6px, 1.2vw, 14px)",
-            background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)",
-            borderRadius: 8, padding: "clamp(4px,0.6vw,7px) clamp(10px,1.8vw,18px)",
-            color: "white", fontSize: "clamp(9px, 1.2vw, 11.5px)", fontWeight: 700,
-            backdropFilter: "blur(4px)", letterSpacing: "0.02em",
-          }}>
-            {slide.cta} →
-          </div>
-        </div>
+        ) : (
+          <img
+            src={slide.src} alt={slide.alt} draggable="false"
+            loading={Math.abs(offset) <= 1 ? "eager" : "lazy"}
+            onError={() => setImgErrors(p => ({ ...p, [idx]: true }))}
+            style={{
+              width: "100%", height: "100%", objectFit: "cover",
+              display: "block", pointerEvents: "none",
+            }}
+          />
+        )}
       </div>
     );
   };
 
+  const allBroken = Object.keys(imgErrors).length >= total;
+  if (allBroken) {
+    return (
+      <section style={{ padding: "clamp(60px,8vw,100px) 0", background: "rgba(255,255,255,0.88)" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 clamp(16px,4vw,40px)" }}>
+          <Reveal><SH badge="Special Offer" title="Hamare Khaas Offers!" sub="Best products. Best prices. Har hafte naye offers aapke liye!" /></Reveal>
+          <div style={{ textAlign: "center", padding: "40px 20px", color: "#94a3b8", fontSize: 14, fontWeight: 600 }}>
+            <Icon name="image" size={40} color="#cbd5e1" />
+            <p style={{ marginTop: 12 }}>Offers jald aa rahe hain!</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <section style={{ padding: "clamp(60px,8vw,100px) 0", background: "rgba(255,255,255,0.88)", overflow: "hidden" }}>
+    <section
+      style={{
+        padding: "clamp(50px,7vw,90px) 0 clamp(40px,5vw,60px)",
+        background: "rgba(255,255,255,0.88)",
+        overflow: "hidden",
+        position: "relative",
+        isolation: "isolate",
+      }}
+      onMouseEnter={onEnter} onMouseLeave={onLeave}
+    >
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 clamp(16px,4vw,40px)" }}>
-        <Reveal><SH badge="Special Offer" title="Hamare Khaas Offers!" sub="Online order karo aur pao exclusive discount aur free home delivery" /></Reveal>
+        <Reveal><SH badge="Special Offer" title="Hamare Khaas Offers!" sub="Best products. Best prices. Har hafte naye offers aapke liye!" /></Reveal>
       </div>
 
-      {/* Carousel */}
+      {/* Cover-flow track */}
       <Reveal>
         <div
           style={{ position: "relative", width: "100%", maxWidth: 1200, margin: "0 auto" }}
-          onMouseEnter={pause} onMouseLeave={resume}
           onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
         >
-          {/* Track area */}
-          <div style={{ position: "relative", width: "100%", height: "clamp(155px, 35vw, 300px)", margin: "0 auto" }}>
-            {renderCard(getPrev, "left")}
-            {renderCard(current, "center")}
-            {renderCard(getNext, "right")}
+          {/* Fixed-height container — prevents layout reflow on slide change */}
+          <div style={{
+            position: "relative",
+            width: "100%",
+            height: "clamp(340px, 62vw, 430px)",
+            margin: "0 auto",
+          }}>
+            {offsets.map(o => renderCard(o))}
           </div>
 
-          {/* Arrow Buttons */}
-          {[["left", prev], ["right", next]].map(([side, fn]) => (
-            <button key={side} aria-label={`${side === "left" ? "Previous" : "Next"} slide`} onClick={fn}
-              style={{
-                position: "absolute", top: "50%", [side]: "clamp(8px, 2.5vw, 28px)",
-                transform: "translateY(-50%)", zIndex: 10,
-                width: "clamp(36px, 5vw, 48px)", height: "clamp(36px, 5vw, 48px)",
-                borderRadius: "50%", border: "none",
-                background: "linear-gradient(135deg, #0d4f6b, #0891b2)",
-                boxShadow: "0 6px 20px rgba(13,79,107,0.35), 0 0 0 3px rgba(255,255,255,0.15)",
-                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                color: "white", transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)", padding: 0,
-              }}
-              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-50%) scale(1.12)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(13,79,107,0.45), 0 0 0 4px rgba(255,255,255,0.2)"; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = "translateY(-50%)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(13,79,107,0.35), 0 0 0 3px rgba(255,255,255,0.15)"; }}>
-              <svg width="clamp(16px,2.2vw,20px)" height="clamp(16px,2.2vw,20px)" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                {side === "left" ? <polyline points="15 18 9 12 15 6" /> : <polyline points="9 6 15 12 9 18" />}
-              </svg>
-            </button>
-          ))}
-
-          {/* Dot indicators + counter */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, marginTop: "clamp(14px, 2vw, 22px)" }}>
-            <div style={{ display: "flex", justifyContent: "center", gap: 7 }}>
-              {PROMO_SLIDES.map((s, i) => (
-                <button key={s.id} aria-label={`Go to slide ${i + 1}`} onClick={() => goTo(i)}
-                  style={{
-                    width: current === i ? "clamp(22px, 3.5vw, 30px)" : "clamp(7px, 1vw, 9px)",
-                    height: "clamp(7px, 1vw, 9px)",
-                    borderRadius: 20, border: "none", cursor: "pointer", padding: 0,
-                    background: current === i ? "linear-gradient(90deg, #0d4f6b, #0891b2)" : "rgba(0,0,0,0.1)",
-                    transition: "all 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
-                  }} />
-              ))}
-            </div>
-            <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600, fontFamily: "'Outfit', sans-serif" }}>
-              <span style={{ color: "#0d4f6b", fontWeight: 800, fontSize: 13 }}>{String(current + 1).padStart(2, "0")}</span>
-              <span style={{ margin: "0 2px" }}>/</span>
-              <span>{String(total).padStart(2, "0")}</span>
-            </div>
+          {/* Dot indicators */}
+          <div style={{
+            display: "flex", justifyContent: "center", gap: 8,
+            marginTop: "clamp(18px, 2.5vw, 28px)",
+            padding: "0 20px",
+          }}>
+            {AD_SLIDES.map((s, i) => (
+              <button key={s.id} aria-label={`Go to slide ${i + 1}`}
+                onClick={() => setCurrent(i)}
+                style={{
+                  width: current === i ? 24 : 8,
+                  height: 8,
+                  borderRadius: 20, border: "none", cursor: "pointer", padding: 0,
+                  background: current === i ? "linear-gradient(90deg, #0d4f6b, #0891b2)" : "rgba(0,0,0,0.12)",
+                  transition: "all 0.4s cubic-bezier(0.22, 1, 0.36, 1)",
+                  flexShrink: 0,
+                }} />
+            ))}
           </div>
         </div>
       </Reveal>
-
-      {/* Bottom CTA Bar */}
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 clamp(16px,4vw,40px)" }}>
-        <Reveal delay={100}>
-          <div style={{ marginTop: "clamp(24px,3vw,36px)", background: "linear-gradient(135deg,#0d4f6b,#0891b2)", borderRadius: 20, padding: "clamp(20px,3vw,28px) clamp(24px,4vw,36px)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 20, boxShadow: "0 15px 35px rgba(13,79,107,0.2)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{ filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.15))" }}><Icon name="sparkle" size={36} color="white" /></div>
-              <div>
-                <div style={{ color: "white", fontWeight: 800, fontSize: "clamp(16px,2.5vw,20px)", fontFamily: "'Outfit', sans-serif" }}>Aaj Ka Special discount!</div>
-                <div style={{ color: "rgba(255,255,255,0.8)", fontSize: "clamp(12px,1.8vw,13.5px)", fontWeight: 500, marginTop: 2 }}>Order online kijiye aur flat 15% discount paiye sabhi medicines par.</div>
-              </div>
-            </div>
-            <a href={`https://wa.me/${CONFIG.whatsapp}?text=Namaste! Mujhe 15% discount offer ke saath order karna hai.`} target="_blank" rel="noreferrer"
-              style={{ background: "#25d366", color: "white", padding: "clamp(12px,2vw,14px) clamp(22px,3vw,28px)", borderRadius: 14, fontWeight: 800, fontSize: "clamp(13px,2vw,14px)", textDecoration: "none", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap", boxShadow: "0 8px 20px rgba(37,211,102,0.35)", transition: "all 0.25s" }}
-              onMouseEnter={e => e.currentTarget.style.transform = "scale(1.03)"}
-              onMouseLeave={e => e.currentTarget.style.transform = "none"}>
-              <WhatsAppIcon size={16} color="white" /> WhatsApp par Order Karo
-            </a>
-          </div>
-        </Reveal>
-      </div>
     </section>
   );
 }
